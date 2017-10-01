@@ -79,6 +79,7 @@ public class FragmentCharacters extends android.support.v4.app.Fragment
 		this.setHasOptionsMenu(true);
 		
 		Cursor cursor = Application.query(SELECT_QUERY);
+		
 		this.adapter = new AdapterList(this::getListItemId,
 		                               this::getListItemView,
 		                               cursor);
@@ -369,7 +370,7 @@ public class FragmentCharacters extends android.support.v4.app.Fragment
 	
 	
 	
-	private void refresh()
+	public void refresh()
 	{
 		Cursor cursor = Application.query(SELECT_QUERY);
 		this.adapter.swapCursor(cursor);
