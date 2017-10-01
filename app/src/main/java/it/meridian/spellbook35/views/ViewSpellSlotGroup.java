@@ -37,15 +37,12 @@ public class ViewSpellSlotGroup extends RelativeLayout
 	
 	private void init(Context context, AttributeSet attributeSet)
 	{
-//		this.setFocusable(false);
+//		final int PADDING = 3;
+//		this.setPaddingRelative(PADDING, PADDING, PADDING, PADDING);
 		
-		final int PADDING = 4;
-		this.setPaddingRelative(PADDING, PADDING, PADDING, PADDING);
-		
-		final float TEXT_SIZE = 24f;
+		final float TEXT_SIZE = 22f;
 		this.text_view_level = new TextView(context);
 		{
-//			this.text_view_level.setFocusable(false);
 			this.text_view_level.setTextSize(TEXT_SIZE);
 			
 			this.addView(this.text_view_level);
@@ -56,7 +53,6 @@ public class ViewSpellSlotGroup extends RelativeLayout
 		
 		this.text_view_count = new TextView(context);
 		{
-//			this.text_view_count.setFocusable(false);
 			this.text_view_count.setTextSize(TEXT_SIZE);
 			
 			this.addView(this.text_view_count);

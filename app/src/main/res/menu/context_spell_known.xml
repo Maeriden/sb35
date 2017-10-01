@@ -2,7 +2,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
-        android:id="@+id/unlearn_spell"
+        android:id="@+id/menu_action_delete"
         android:title="@string/unlearn_spell"/>
 
 </menu>

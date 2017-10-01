@@ -48,6 +48,13 @@ public class ViewSpellSlot extends LinearLayout
 	
 	public void setNameText(String text)
 	{
+		this.setNameText(text, false);
+	}
+	
+	public void setNameText(String text, boolean is_domain)
+	{
+		if(is_domain)
+			text = "[D] " + text;
 		this.text_view_name.setText(text);
 	}
 	

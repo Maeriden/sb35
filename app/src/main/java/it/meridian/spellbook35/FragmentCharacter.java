@@ -6,25 +6,18 @@ import android.support.annotation.CallSuper;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.view.PagerTitleStrip;
 import android.support.v4.view.ViewPager;
-import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Adapter;
 
 
 public class FragmentCharacter extends android.support.v4.app.Fragment
 {
 	static public final String ARG_KEY_CHARACTER = "character";
-	static private final int VIEW_PAGER_ID = 1;
 	
 	private AdapterPager adapter;
-	private String character_name;
+	private String character;
 	private Fragment frag_character_slots;
 	private Fragment frag_character_known;
 	
@@ -62,7 +55,7 @@ public class FragmentCharacter extends android.support.v4.app.Fragment
 		                                this.frag_character_known);
 		
 		Bundle args = this.getArguments();
-		this.character_name = args.getString(ARG_KEY_CHARACTER);
+		this.character = args.getString(ARG_KEY_CHARACTER);
 		this.frag_character_slots.setArguments(args);
 		this.frag_character_known.setArguments(args);
 	}
@@ -101,8 +94,10 @@ public class FragmentCharacter extends android.support.v4.app.Fragment
 	public void onStart()
 	{
 		super.onStart();
-		this.getActivity().setTitle(this.character_name);
+		this.getActivity().setTitle(this.character);
 	}
+	
+	
 	
 	
 	private class AdapterPager extends android.support.v4.app.FragmentPagerAdapter

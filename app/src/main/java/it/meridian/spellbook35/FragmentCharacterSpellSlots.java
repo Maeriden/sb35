@@ -30,32 +30,40 @@ import it.meridian.spellbook35.views.ViewSpellSlotGroup;
 
 public class FragmentCharacterSpellSlots extends android.support.v4.app.Fragment implements AdapterExpandableList.ISupplier, FragmentAssignSpell.ISpellChoiceListener
 {
-	static public final String TAG = "it.meridian.spellbook35.FragmentCharacterSpellSlots";
 	static public final int REQUEST_CODE_ASSIGN_SPELL = 1;
 	
 	static private final String QUERY_GROUPS =
-			"  SELECT level, SUM(expended) AS expended_count, COUNT(*) AS slot_count " +
-			"    FROM character_spell_slot " +
-			"   WHERE character = ? " +
-			"GROUP BY level " +
-			"ORDER BY level";
+			"  SELECT slot.level         AS level,          " +
+			"         SUM(slot.expended) AS expended_count, " +
+			"         COUNT(*)           AS slot_count      " +
+			"    FROM character_spell_slot slot             " +
+			"   WHERE slot.character = ?                    " +
+			"GROUP BY slot.level                            " +
+			"ORDER BY slot.level";
 	
 	static private final String QUERY_CHILDREN =
-			"   SELECT slot.id, slot.spell_name, spell.summary AS spell_desc, slot.expended " +
-			"     FROM character_spell_slot slot " +
-			"LEFT JOIN spell " +
-			"       ON slot.spell_name = spell.name " +
-			"    WHERE slot.character = ? " +
-			"      AND slot.level = ? " +
-			" ORDER BY slot.spell_name IS NULL, slot.spell_name";
+			"   SELECT slot.id        AS id,         " +
+			"          slot.spell     AS spell_name, " +
+			"          slot.expended  AS expended,   " +
+			"          slot.is_domain AS is_domain,  " +
+			"          spell.summary  AS spell_desc  " +
+			"     FROM character_spell_slot slot     " +
+			"LEFT JOIN spell                         " +
+			"       ON slot.spell = spell.name       " +
+			"    WHERE slot.character = ?            " +
+			"      AND slot.level = ?                " +
+			" ORDER BY slot.is_domain DESC,          " +
+			"          slot.spell IS NULL,           " +
+			"          slot.spell";
 	
 	static private final String WHERE_CLAUSE =
-			"character = ? AND id = ?";
+			"    character = ? " +
+			"AND id = ?";
 	
 	static private final String QUERY_NEXT_SLOT_ID =
-			"SELECT MAX(id)+1 AS next_id " +
-			"  FROM character_spell_slot " +
-			" WHERE character = ?";
+			"SELECT MAX(slot.id)+1 AS next_id " +
+			"  FROM character_spell_slot slot " +
+			" WHERE slot.character = ?";
 	
 	
 	
@@ -75,6 +83,7 @@ public class FragmentCharacterSpellSlots extends android.support.v4.app.Fragment
 		this.frag_spell_info = new FragmentSpellInfo();
 		this.frag_assign_spell = new FragmentAssignSpell();
 	}
+	
 	
 	/**
 	 * Called to do initial creation of a fragment.  This is called after
@@ -113,7 +122,7 @@ public class FragmentCharacterSpellSlots extends android.support.v4.app.Fragment
 		ExpandableListView list_view = new ExpandableListView(this.getContext());
 		list_view.setId(R.id.expandable_list_view);
 		list_view.setOnChildClickListener(this::onClickExpandableListItem);
-		list_view.setOnCreateContextMenuListener(this::onCreateExpandableListContextMenu);
+		list_view.setOnCreateContextMenuListener(this::onCreateExpandableListItemContextMenu);
 		list_view.setAdapter(this.adapter);
 		return list_view;
 	}
@@ -134,8 +143,9 @@ public class FragmentCharacterSpellSlots extends android.support.v4.app.Fragment
 	@Override
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater)
 	{
-		inflater.inflate(R.menu.fragment_character_slots, menu);
+		inflater.inflate(R.menu.options_character_slots, menu);
 	}
+	
 	
 	/**
 	 * This hook is called whenever an item in your options menu is selected.
@@ -235,7 +245,7 @@ public class FragmentCharacterSpellSlots extends android.support.v4.app.Fragment
 		// FIXME: This function is public, meaning it could be called by external code while
 		//        slot_id_to_assign is not yet consumed
 		ContentValues values = new ContentValues(1);
-		values.put("spell_name", spell_name);
+		values.put("spell", spell_name);
 		int affected = Application.update("character_spell_slot",
 		                                  values,
 		                                  WHERE_CLAUSE,
@@ -248,6 +258,7 @@ public class FragmentCharacterSpellSlots extends android.support.v4.app.Fragment
 		this.slot_id_to_assign = -1;
 	}
 	
+	
 	@Override
 	public void onSpellChoiceCancel()
 	{
@@ -256,13 +267,14 @@ public class FragmentCharacterSpellSlots extends android.support.v4.app.Fragment
 	
 	
 	
+	
 	private boolean onClickExpandableListItem(ExpandableListView list_view, View item, int groupPosition, int childPosition, long id)
 	{
 		Cursor child_cursor = (Cursor) this.adapter.getChild(groupPosition, childPosition);
 		String spell_name = Utils.CursorGetString(child_cursor, "spell_name");
-		boolean is_empty = spell_name == null;
+		boolean slot_is_empty = spell_name == null;
 		
-		if(is_empty)
+		if(slot_is_empty)
 		{
 			int slot_id = Utils.CursorGetInt(child_cursor, "id");
 			this.slot_id_to_assign = slot_id;
@@ -294,7 +306,7 @@ public class FragmentCharacterSpellSlots extends android.support.v4.app.Fragment
 	}
 	
 	
-	private void onCreateExpandableListContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo)
+	private void onCreateExpandableListItemContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo)
 	{
 		// TODO
 		ExpandableListView.ExpandableListContextMenuInfo info = (ExpandableListView.ExpandableListContextMenuInfo) menuInfo;
@@ -308,17 +320,25 @@ public class FragmentCharacterSpellSlots extends android.support.v4.app.Fragment
 			
 			boolean is_empty = Utils.CursorGetString(child_cursor, "spell_name") == null;
 			boolean expended = Utils.CursorGetInt(child_cursor, "expended") != 0;
+			boolean is_domain = Utils.CursorGetInt(child_cursor, "is_domain") != 0;
 			
 			this.getActivity().getMenuInflater().inflate(R.menu.context_spell_slot, menu);
 			menu.findItem(R.id.clear_slot).setVisible(!is_empty);
 			menu.findItem(R.id.expend_slot).setVisible(!expended);
 			menu.findItem(R.id.recover_slot).setVisible(expended);
+			menu.findItem(R.id.toggle_domain).setChecked(is_domain);
 		}
 	}
+	
 	
 	@Override
 	public boolean onContextItemSelected(MenuItem item)
 	{
+		// NOTE: For some reason this function is called even when another fragment is visible
+		
+		if(!this.getUserVisibleHint())
+			return super.onContextItemSelected(item);
+		
 		ExpandableListView.ExpandableListContextMenuInfo info = (ExpandableListView.ExpandableListContextMenuInfo) item.getMenuInfo();
 		
 		int view_type = ExpandableListView.getPackedPositionType(info.packedPosition);
@@ -360,7 +380,21 @@ public class FragmentCharacterSpellSlots extends android.support.v4.app.Fragment
 				case R.id.clear_slot:
 				{
 					ContentValues values = new ContentValues(1);
-					values.put("spell_name", (String) null);
+					values.put("spell", (String) null);
+					long affected = Application.update("character_spell_slot", values,
+					                                   WHERE_CLAUSE,
+					                                   this.character_name,
+					                                   Integer.toString(slot_id));
+					if(affected > 0)
+						this.refresh();
+					return true;
+				}
+				
+				case R.id.toggle_domain:
+				{
+					boolean is_domain = Utils.CursorGetInt(child_cursor, "is_domain") != 0;
+					ContentValues values = new ContentValues(1);
+					values.put("is_domain", !is_domain);
 					long affected = Application.update("character_spell_slot", values,
 					                                   WHERE_CLAUSE,
 					                                   this.character_name,
@@ -386,12 +420,15 @@ public class FragmentCharacterSpellSlots extends android.support.v4.app.Fragment
 	}
 	
 	
+	
+	
 	private void refresh()
 	{
 		Cursor groups_cursor = Application.query(QUERY_GROUPS,
 		                                         this.character_name);
 		this.adapter.swapGroupsCursor(groups_cursor);
 	}
+	
 	
 	
 	
@@ -449,12 +486,12 @@ public class FragmentCharacterSpellSlots extends android.support.v4.app.Fragment
 		
 		String spell_name = Utils.CursorGetString(child_cursor, "spell_name");
 		String spell_desc = Utils.CursorGetString(child_cursor, "spell_desc");
+		boolean is_domain = Utils.CursorGetInt(child_cursor, "is_domain") != 0;
 		boolean expended = Utils.CursorGetInt(child_cursor, "expended") != 0;
 		
-		view.setNameText(spell_name);
+		view.setNameText(spell_name, is_domain);
 		view.setDescText(spell_desc);
 		view.setBackgroundColor(expended ? 0x40800000 : Color.TRANSPARENT);
 		return view;
-//		return LayoutInflater.from(this.getContext()).inflate(android.R.layout.simple_expandable_list_item_1, parent, false);
 	}
 }

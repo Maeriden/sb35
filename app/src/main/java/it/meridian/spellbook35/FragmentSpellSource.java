@@ -8,45 +8,74 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ExpandableListView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.Objects;
 
 import it.meridian.spellbook35.utils.AdapterExpandableList;
 import it.meridian.spellbook35.utils.Utils;
-import it.meridian.spellbook35.views.ViewSpellAssign;
+import it.meridian.spellbook35.views.ViewSpellLearnable;
 import it.meridian.spellbook35.views.ViewSpellSlotGroup;
 
 
 public class FragmentSpellSource extends android.support.v4.app.Fragment implements AdapterExpandableList.ISupplier
 {
 	static public final String ARG_KEY_SOURCE = "source";
+	static public final String ARG_KEY_CHARACTER = "character";
 	
 	static protected final String QUERY_GROUPS =
-			"  SELECT source   AS source, " +
-			"         level    AS level, " +
-			"         COUNT(*) AS count " +
-			"    FROM spell_lists " +
-			"   WHERE source = ? " +
-			"GROUP BY level";
+			"  SELECT spells.source AS source, " +
+			"         spells.level  AS level,  " +
+			"         COUNT(*)      AS count   " +
+			"    FROM source_spells spells     " +
+			"   WHERE spells.source = ?        " +
+			"   AND NOT EXISTS (SELECT 1                               " +
+			"                     FROM character_spell_known known     " +
+			"                    WHERE known.character = ?             " +
+			"                      AND known.spell     = spells.spell  " +
+			"                      AND known.source    = spells.source " +
+			"                      AND known.level     = spells.level) " +
+			"GROUP BY spells.level";
 	
 	static protected final String QUERY_CHILDREN =
-			"SELECT spell.rowid   AS spell_id, " +
+			"SELECT spell.rowid   AS spell_id,   " +
 			"       spell.name    AS spell_name, " +
-			"       spell.summary AS spell_desc " +
-	        "  FROM spell_lists list, spell" +
-	        " WHERE list.spell_name = spell.name " +
-	        "   AND list.source = ? " +
-	        "   AND list.level = ? " +
+			"       spell.summary AS spell_desc  " +
+	        "  FROM source_spells spells,        " +
+			"       spell         spell          " +
+	        " WHERE spells.spell = spell.name    " +
+	        "   AND spells.source = ?            " +
+	        "   AND spells.level = ?             " +
 			"   AND spell.disabled = 0";
+	
+	static protected final String QUERY_CHILDREN_2 =
+			"SELECT spell.id      AS spell_id,   " +
+			"       spell.name    AS spell_name, " +
+			"       spell.summary AS spell_desc  " +
+			"  FROM source_spells spells,        " +
+			"       spell         spell          " +
+			" WHERE spells.spell   = spell.name  " +
+			"   AND spells.source  = ?           " +
+			"   AND spells.level   = ?           " +
+			"   AND spell.disabled = 0           " +
+			"   AND NOT EXISTS (SELECT 1                               " +
+			"                     FROM character_spell_known known     " +
+			"                    WHERE known.character = ?             " +
+			"                      AND known.spell     = spells.spell  " +
+			"                      AND known.source    = spells.source " +
+			"                      AND known.level     = spells.level) ";
 	
 	
 	private String source_name;
+	private String character_name;
 	private AdapterExpandableList adapter;
 	private FragmentSpellInfo frag_spell_info;
+	private ArrayList<LearnedSpell> choices;
 	
 	
 	
@@ -54,6 +83,7 @@ public class FragmentSpellSource extends android.support.v4.app.Fragment impleme
 	{
 		this.frag_spell_info = new FragmentSpellInfo();
 		this.adapter = new AdapterExpandableList(this, null);
+		this.choices = new ArrayList<>();
 	}
 	
 	
@@ -62,12 +92,34 @@ public class FragmentSpellSource extends android.support.v4.app.Fragment impleme
 	public void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
+		this.setHasOptionsMenu(true);
+		
+		this.choices.clear();
+		boolean do_refresh = false;
 		
 		String source_name = (String) this.getArguments().get(ARG_KEY_SOURCE);
 		if(!Objects.equals(this.source_name, source_name))
 		{
 			this.source_name = source_name;
-			Cursor groups_cursor = Application.query(QUERY_GROUPS, this.source_name);
+			do_refresh = true;
+		}
+		
+		String character_name = (String) this.getArguments().get(ARG_KEY_CHARACTER);
+		if(!Objects.equals(this.character_name, character_name))
+		{
+			this.character_name = character_name;
+			do_refresh = true;
+		}
+		
+		// FIXME: This is a hack. Properly set up parent views to pass down the current character
+		if(this.character_name == null)
+		{
+			this.character_name = Application.current_character;
+		}
+		
+		if(do_refresh)
+		{
+			Cursor groups_cursor = Application.query(QUERY_GROUPS, this.source_name, this.character_name);
 			this.adapter.swapGroupsCursor(groups_cursor);
 		}
 	}
@@ -87,10 +139,24 @@ public class FragmentSpellSource extends android.support.v4.app.Fragment impleme
 	
 	
 	@Override
-	public void onViewCreated(View view, @Nullable Bundle savedInstanceState)
+	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater)
 	{
-		super.onViewCreated(view, savedInstanceState);
-		view.setOnKeyListener(this::onKeyListener);
+		inflater.inflate(R.menu.options_spell_learn, menu);
+	}
+	
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item)
+	{
+		switch(item.getItemId())
+		{
+			case R.id.menu_action_done:
+			{
+				this.onClickDone();
+			}
+			break;
+		}
+		return true;
 	}
 	
 	
@@ -100,7 +166,6 @@ public class FragmentSpellSource extends android.support.v4.app.Fragment impleme
 		super.onStart();
 		this.getActivity().setTitle(this.source_name);
 	}
-	
 	
 	
 	private boolean onClickExpandableListItem(ExpandableListView list_view, View item, int groupPosition, int childPosition, long id)
@@ -117,6 +182,76 @@ public class FragmentSpellSource extends android.support.v4.app.Fragment impleme
 				.addToBackStack(null)
 				.commit();
 		return true;
+	}
+	
+	
+	private void onClickCheckbox(ViewSpellLearnable view, int groupPosition, int childPosition, boolean isChecked)
+	{
+		Cursor group_cursor = (Cursor) this.adapter.getGroup(groupPosition);
+		Cursor child_cursor = (Cursor) this.adapter.getChild(groupPosition, childPosition);
+		
+		String spell_name = Utils.CursorGetString(child_cursor, "spell_name");
+		int level = Utils.CursorGetInt(group_cursor, "level");
+		
+		LearnedSpell item = new LearnedSpell();
+		item.source_name = this.source_name;
+		item.spell_level = level;
+		item.spell_name = spell_name;
+		
+		if(isChecked)
+		{
+			this.choices.add(item);
+		}
+		else
+		{
+			this.choices.remove(item);
+		}
+	}
+	
+	
+	private void onClickDone()
+	{
+		if(this.choices.isEmpty())
+			return;
+		
+		try
+		{
+			ILearnSpellChoiceListener listener = (ILearnSpellChoiceListener)this.getTargetFragment();
+			listener.onLearnSpellChoiceResult(this.choices);
+			
+			this.getFragmentManager().popBackStack();
+			this.getFragmentManager().popBackStack();
+		}
+		catch(ClassCastException ignored)
+		{
+			Toast.makeText(this.getContext(),
+			               "ERROR: Target fragment does not implement IResultListener",
+			               Toast.LENGTH_SHORT).show();
+		}
+	}
+	
+	
+	// Hack to call onCancelFragmentAssignSpell when the user presses BACK
+	private boolean onKeyListener(View view, int keyCode, KeyEvent event)
+	{
+		if(event.getAction() == KeyEvent.ACTION_UP)
+		{
+			if(keyCode == KeyEvent.KEYCODE_BACK)
+			{
+				try
+				{
+					ILearnSpellChoiceListener listener = (ILearnSpellChoiceListener)this.getTargetFragment();
+					listener.onLearnSpellChoiceCancel();
+				}
+				catch(ClassCastException ignored)
+				{
+					Toast.makeText(this.getContext(),
+					               "ERROR: Target fragment does not implement IResultListener",
+					               Toast.LENGTH_SHORT).show();
+				}
+			}
+		}
+		return false;
 	}
 	
 	
@@ -138,12 +273,12 @@ public class FragmentSpellSource extends android.support.v4.app.Fragment impleme
 	public Cursor getExpandableListChildrenCursor(Cursor group_cursor)
 	{
 		int level = Utils.CursorGetInt(group_cursor, "level");
-		Cursor children_cursor = Application.query(QUERY_CHILDREN,
+		Cursor children_cursor = Application.query(QUERY_CHILDREN_2,
 		                                           this.source_name,
-		                                           Integer.toString(level));
+		                                           Integer.toString(level),
+		                                           this.character_name);
 		return children_cursor;
 	}
-	
 	
 	@Override
 	public View getExpandableListGroupView(Cursor group_cursor, int groupPosition, boolean isExpanded, View convertView, ViewGroup parent)
@@ -166,11 +301,11 @@ public class FragmentSpellSource extends android.support.v4.app.Fragment impleme
 	@Override
 	public View getExpandableListChildView(Cursor child_cursor, int groupPosition, int childPosition, boolean isLastChild, View convertView, ViewGroup parent)
 	{
-		ViewSpellAssign view = (ViewSpellAssign) convertView;
+		ViewSpellLearnable view = (ViewSpellLearnable) convertView;
 		if(view == null)
 		{
-			view = new ViewSpellAssign(this.getContext());
-			view.setButtonOnClickListener(this::onClickButtonAssign);
+			view = new ViewSpellLearnable(this.getContext());
+			view.setCheckboxStateChangeListener(this::onClickCheckbox);
 		}
 		
 		String spell_name = Utils.CursorGetString(child_cursor, "spell_name");
@@ -180,64 +315,31 @@ public class FragmentSpellSource extends android.support.v4.app.Fragment impleme
 		view.setTextDesc(spell_desc);
 		view.setPosition(groupPosition, childPosition);
 		
+		boolean isChecked = false;
+		for(LearnedSpell choice : this.choices)
+		{
+			if(choice.spell_name.equals(spell_name))
+			{
+				isChecked = true;
+				break;
+			}
+		}
+		view.setCheckboxState(isChecked);
+		
 		return view;
 	}
 	
-	private void onClickButtonAssign(ViewSpellAssign view, int groupPosition, int childPosition)
+	
+	public class LearnedSpell
 	{
-		Cursor group_cursor = (Cursor) this.adapter.getGroup(groupPosition);
-		Cursor child_cursor = (Cursor) this.adapter.getChild(groupPosition, childPosition);
-		
-		String spell_name = Utils.CursorGetString(child_cursor, "spell_name");
-		int level = Utils.CursorGetInt(group_cursor, "level");
-		
-		try
-		{
-			ISpellChoiceListener listener = (ISpellChoiceListener)this.getTargetFragment();
-			listener.onSpellChoiceResult(this.source_name, level, spell_name);
-		}
-		catch(ClassCastException ignored)
-		{
-			Toast.makeText(this.getContext(),
-			               "ERROR: Target fragment does not implement IResultListener",
-			               Toast.LENGTH_SHORT).show();
-		}
-		
-		this.getFragmentManager().popBackStack();
-		this.getFragmentManager().popBackStack();
+		public String source_name;
+		public int spell_level;
+		public String spell_name;
 	}
 	
-	
-	
-	// Hack to call onCancelFragmentAssignSpell when the user presses BACK
-	private boolean onKeyListener(View view, int keyCode, KeyEvent event)
+	public interface ILearnSpellChoiceListener
 	{
-//		Log.d("FragmentAssignSpell", "onKeyListener");
-		if(event.getAction() == KeyEvent.ACTION_UP)
-		{
-			if(keyCode == KeyEvent.KEYCODE_BACK)
-			{
-				try
-				{
-					ISpellChoiceListener listener = (ISpellChoiceListener)this.getTargetFragment();
-					listener.onSpellChoiceCancel();
-				}
-				catch(ClassCastException ignored)
-				{
-					Toast.makeText(this.getContext(),
-					               "ERROR: Target fragment does not implement IResultListener",
-					               Toast.LENGTH_SHORT).show();
-				}
-			}
-		}
-		return false;
-	}
-	
-	
-	
-	public interface ISpellChoiceListener
-	{
-		void onSpellChoiceResult(String source_name, int level, String spell_name);
-		void onSpellChoiceCancel();
+		void onLearnSpellChoiceResult(ArrayList<LearnedSpell> choices);
+		void onLearnSpellChoiceCancel();
 	}
 }

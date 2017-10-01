@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 
 public class Application extends android.app.Application
 {
+	static public String current_character;
 	static private SQLiteDatabase database;
 	
 	@Override

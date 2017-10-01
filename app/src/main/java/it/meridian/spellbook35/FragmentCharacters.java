@@ -2,7 +2,6 @@ package it.meridian.spellbook35;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Fragment;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -11,6 +10,7 @@ import android.os.Bundle;
 import android.support.annotation.CallSuper;
 import android.support.annotation.Nullable;
 import android.text.InputType;
+import android.view.ContextMenu;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -31,7 +31,12 @@ import it.meridian.spellbook35.utils.Utils;
 
 public class FragmentCharacters extends android.support.v4.app.Fragment
 {
-	static private final String QUERY = "SELECT rowid, name FROM character";
+	static private final String SELECT_QUERY = "SELECT id, name FROM character";
+	static private final String UPDATE_WHERE = "name = ?";
+	static private final String DELETE_WHERE = "name = ?";
+	
+	
+	
 	
 	private AdapterList adapter;
 	private FragmentCharacter frag_character;
@@ -73,7 +78,7 @@ public class FragmentCharacters extends android.support.v4.app.Fragment
 		super.onCreate(savedInstanceState);
 		this.setHasOptionsMenu(true);
 		
-		Cursor cursor = Application.query(QUERY);
+		Cursor cursor = Application.query(SELECT_QUERY);
 		this.adapter = new AdapterList(this::getListItemId,
 		                               this::getListItemView,
 		                               cursor);
@@ -122,8 +127,8 @@ public class FragmentCharacters extends android.support.v4.app.Fragment
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
 	{
 		ListView list_view = new ListView(this.getContext());
-//		list_view.setBackgroundResource(R.drawable.spellbook_bg);
 		list_view.setOnItemClickListener(this::onClickListItem);
+		list_view.setOnCreateContextMenuListener(this::onCreateListItemContextMenu);
 		list_view.setAdapter(this.adapter);
 		return list_view;
 	}
@@ -169,7 +174,7 @@ public class FragmentCharacters extends android.support.v4.app.Fragment
 	@Override
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater)
 	{
-		inflater.inflate(R.menu.fragment_character_list, menu);
+		inflater.inflate(R.menu.options_characters, menu);
 	}
 	
 	
@@ -207,6 +212,8 @@ public class FragmentCharacters extends android.support.v4.app.Fragment
 	{
 		super.onStart();
 		this.getActivity().setTitle(R.string.app_name);
+		
+		Application.current_character = null;
 	}
 	
 	
@@ -237,28 +244,15 @@ public class FragmentCharacters extends android.support.v4.app.Fragment
 				.replace(R.id.activity_main_content, this.frag_character)
 				.addToBackStack(null)
 				.commit();
+		
+		Application.current_character = character;
 	}
 	
 	
 	
-	
-	/**
-	 * Callback method to be invoked when an item in this view has been
-	 * clicked and held.
-	 * <p>
-	 * Implementers can call getItemAtPosition(position) if they need to access
-	 * the data associated with the selected item.
-	 *
-	 * @param parent   The AbsListView where the click happened
-	 * @param view     The view within the AbsListView that was clicked
-	 * @param position The position of the view in the list
-	 * @param id       The row id of the item that was clicked
-	 * @return true if the callback consumed the long click, false otherwise
-	 */
-	public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id)
+	private void onCreateListItemContextMenu(ContextMenu menu, View list_view, ContextMenu.ContextMenuInfo menuInfo)
 	{
-		this.getActivity().openContextMenu(view);
-		return false;
+		this.getActivity().getMenuInflater().inflate(R.menu.context_character, menu);
 	}
 	
 	
@@ -294,8 +288,38 @@ public class FragmentCharacters extends android.support.v4.app.Fragment
 	
 	
 	
+	@Override
+	public boolean onContextItemSelected(MenuItem item)
+	{
+		ListView.AdapterContextMenuInfo info = (ListView.AdapterContextMenuInfo) item.getMenuInfo();
+		Cursor cursor = (Cursor) this.adapter.getItem(info.position);
+		String name = Utils.CursorGetString(cursor, "name");
+		
+		switch(item.getItemId())
+		{
+			case R.id.menu_action_update:
+			{
+				// TODO: Create rename dialog
+				Toast.makeText(this.getContext(), "Not implemented", Toast.LENGTH_SHORT).show();
+				return true;
+			}
+			
+			case R.id.menu_action_delete:
+			{
+				boolean success = this.delete_character(name);
+				if(success)
+					this.refresh();
+				
+				return true;
+			}
+		}
+		return false;
+	}
 	
-	private boolean createCharacter(String name)
+	
+	
+	
+	private boolean create_character(String name)
 	{
 		if(name.length() > 0)
 		{
@@ -313,11 +337,41 @@ public class FragmentCharacters extends android.support.v4.app.Fragment
 	}
 	
 	
+	private boolean rename_character(String old_name, String new_name)
+	{
+		if(old_name != null && old_name.length() > 0)
+		{
+			if(new_name != null && new_name.length() > 0)
+			{
+				ContentValues values = new ContentValues(1);
+				values.put("name", new_name);
+				int affected = Application.update("character", values, UPDATE_WHERE, old_name);
+				return affected > 0;
+			}
+		}
+		return false;
+	}
+	
+	
+	
+	private boolean delete_character(String name)
+	{
+		if(name != null && name.length() > 0)
+		{
+			long affected = Application.delete("character",
+			                                   DELETE_WHERE,
+			                                   name);
+			return affected > 0;
+		}
+		return false;
+	}
+	
+	
 	
 	
 	private void refresh()
 	{
-		Cursor cursor = Application.query(QUERY);
+		Cursor cursor = Application.query(SELECT_QUERY);
 		this.adapter.swapCursor(cursor);
 	}
 	
@@ -332,7 +386,7 @@ public class FragmentCharacters extends android.support.v4.app.Fragment
 	 */
 	public long getListItemId(Cursor cursor)
 	{
-		int id = Utils.CursorGetInt(cursor, "rowid");
+		int id = Utils.CursorGetInt(cursor, "id");
 		return id;
 	}
 	
@@ -379,7 +433,7 @@ public class FragmentCharacters extends android.support.v4.app.Fragment
 			AlertDialog alert = (AlertDialog) dialog;
 			EditText edit = (EditText) alert.findViewById(android.R.id.edit);
 			String name = edit.getText().toString();
-			this.createCharacter(name);
+			this.create_character(name);
 		}
 	}
 }

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+      xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
         android:id="@+id/expend_slot"
@@ -10,6 +11,10 @@
     <item
         android:id="@+id/clear_slot"
         android:title="@string/clear_slot"/>
+    <item
+        android:id="@+id/toggle_domain"
+        android:title="@string/domain_slot"
+        app:actionLayout="@layout/switch_item"/>
     <item
         android:id="@+id/delete_slot"
         android:title="@string/delete_slot"/>

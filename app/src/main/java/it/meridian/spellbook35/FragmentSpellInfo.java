@@ -2,19 +2,16 @@ package it.meridian.spellbook35;
 
 import android.annotation.TargetApi;
 import android.app.ActionBar;
-import android.content.Intent;
 import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.text.Html;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
-import android.widget.EditText;
 import android.widget.ScrollView;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -23,7 +20,6 @@ import android.widget.Toast;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Objects;
-import java.util.regex.Pattern;
 
 import it.meridian.spellbook35.utils.Utils;
 
@@ -33,12 +29,38 @@ public class FragmentSpellInfo extends android.support.v4.app.Fragment
 	static public final String ARG_KEY_SPELL = "spell";
 	
 	
+	static private final String SELECT_QUERY =
+			"SELECT spell.name          AS name,         " +
+			"       spell.book          AS book,         " +
+			"       spell.page          AS page,         " +
+			"       spell.school        AS school,       " +
+			"       spell.subschool     AS subschool,    " +
+			"       spell.descriptors   AS descriptors,  " +
+			"       spell.components    AS components,   " +
+			"       spell.cast_time     AS cast_time,    " +
+			"       spell.range         AS range,        " +
+			"       spell.effect_type   AS effect_type,  " +
+			"       spell.effect        AS effect,       " +
+			"       spell.duration      AS duration,     " +
+			"       spell.saving_throw  AS saving_throw, " +
+			"       spell.resistance    AS resistance,   " +
+			"       spell.fluff         AS fluff,        " +
+			"       spell.description   AS description   " +
+			"  FROM spell_detail spell             " +
+			" WHERE name = ?";
+	
+	static private final String SELECT_LEVELS_QUERY =
+			"SELECT spells.source, spells.level " +
+			"  FROM source_spells spells        " +
+			" WHERE spells.spell = ?";
+	
 	
 	private String spell_name;
-	private View root;
+	
+	private TextView textview_book;
 	private TextView textview_source;
 	private TextView textview_school;
-	private TextView textview_descriptor;
+	private TextView textview_descriptors;
 	private TextView textview_components;
 	private TextView textview_cast_time;
 	private TextView textview_range;
@@ -47,26 +69,20 @@ public class FragmentSpellInfo extends android.support.v4.app.Fragment
 	private TextView textview_duration;
 	private TextView textview_save;
 	private TextView textview_resistance;
-	private TextView textview_desc_m;
-	private TextView textview_desc_l;
+	private TextView textview_flavor;
 	private WebView webview_desc;
-	private EditText edittext_notes;
 	
+	private TableRow row_book;
 	private TableRow row_source;
 	private TableRow row_school;
 	private TableRow row_descriptor;
 	private TableRow row_components;
 	private TableRow row_cast_time;
 	private TableRow row_range;
-	private TableRow row_effect_type;
 	private TableRow row_effect;
 	private TableRow row_duration;
 	private TableRow row_save;
 	private TableRow row_resistance;
-	
-	private MenuItem menu_btn_add_spell;
-	
-	private String notes;
 	
 	
 	
@@ -91,9 +107,10 @@ public class FragmentSpellInfo extends android.support.v4.app.Fragment
 	{
 		ScrollView scroll_view = (ScrollView)inflater.inflate(R.layout.fragment_spell_info, container, false);
 		
-		this.textview_source = (TextView) scroll_view.findViewById(R.id.spell_source);
+		this.textview_book = (TextView) scroll_view.findViewById(R.id.spell_book);
+		this.textview_source = (TextView) scroll_view.findViewById(R.id.spell_levels);
 		this.textview_school = (TextView) scroll_view.findViewById(R.id.spell_school);
-		this.textview_descriptor = (TextView) scroll_view.findViewById(R.id.spell_descriptor);
+		this.textview_descriptors = (TextView) scroll_view.findViewById(R.id.spell_descriptor);
 		this.textview_components = (TextView) scroll_view.findViewById(R.id.spell_components);
 		this.textview_cast_time = (TextView) scroll_view.findViewById(R.id.spell_cast_time);
 		this.textview_range = (TextView) scroll_view.findViewById(R.id.spell_range);
@@ -102,12 +119,11 @@ public class FragmentSpellInfo extends android.support.v4.app.Fragment
 		this.textview_duration = (TextView) scroll_view.findViewById(R.id.spell_duration);
 		this.textview_save = (TextView) scroll_view.findViewById(R.id.spell_saving_throw);
 		this.textview_resistance = (TextView) scroll_view.findViewById(R.id.spell_resistance);
-		this.textview_desc_m = (TextView) scroll_view.findViewById(R.id.spell_description_medium);
-		this.textview_desc_l = (TextView) scroll_view.findViewById(R.id.spell_description_long);
+		this.textview_flavor = (TextView) scroll_view.findViewById(R.id.spell_flavor);
 		this.webview_desc = (WebView) scroll_view.findViewById(R.id.spell_desc);
-		this.edittext_notes = (EditText) scroll_view.findViewById(R.id.spell_notes);
 		
-		this.row_source = (TableRow) scroll_view.findViewById(R.id.row_spell_0);
+		this.row_book = (TableRow) scroll_view.findViewById(R.id.row_spell_0);
+		this.row_source = (TableRow) scroll_view.findViewById(R.id.row_spell_B);
 		this.row_school = (TableRow) scroll_view.findViewById(R.id.row_spell_1);
 		this.row_descriptor = (TableRow) scroll_view.findViewById(R.id.row_spell_2);
 		this.row_components = (TableRow) scroll_view.findViewById(R.id.row_spell_3);
@@ -120,7 +136,7 @@ public class FragmentSpellInfo extends android.support.v4.app.Fragment
 		
 		WebViewClient webview_client = new WebViewClient(this);
 		this.webview_desc.setWebViewClient(webview_client);
-		this.webview_desc.getSettings().setTextZoom(90);
+		this.webview_desc.getSettings().setTextZoom(80);
 		
 		return scroll_view;
 	}
@@ -133,16 +149,33 @@ public class FragmentSpellInfo extends android.support.v4.app.Fragment
 		{
 			this.getActivity().setTitle(this.spell_name);
 			
-			Cursor cursor = Application.query("SELECT * FROM spell_detail WHERE name = ?", this.spell_name);
+			Cursor cursor = Application.query(SELECT_QUERY, this.spell_name);
 			cursor.moveToFirst();
 			
 			{
-				String source_book = Utils.CursorGetString(cursor, "source_book");
-				String source_page = Utils.CursorGetString(cursor, "source_page");
-				if(source_page != null)
-					source_book += " " + source_page;
-				this.row_source.setVisibility(source_book != null ? View.VISIBLE : View.GONE);
-				this.textview_source.setText(source_book);
+				StringBuilder levels = new StringBuilder();
+				Cursor sources = Application.query(SELECT_LEVELS_QUERY, this.spell_name);
+				sources.moveToFirst();
+				for(int i = 0; i < sources.getCount(); ++i)
+				{
+					String source = Utils.CursorGetString(sources, "source");
+					String level = Integer.toString(Utils.CursorGetInt(sources, "level"));
+					levels.append(source).append(" ").append(level);
+					if(i < sources.getCount() - 1)
+						levels.append(", ");
+					sources.moveToNext();
+				}
+				sources.close();
+				this.textview_source.setText(levels);
+			}
+			
+			{
+				String book = Utils.CursorGetString(cursor, "book");
+				String page = Utils.CursorGetString(cursor, "page");
+				if(page != null)
+					book += " " + page;
+				this.row_book.setVisibility(book != null ? View.VISIBLE : View.GONE);
+				this.textview_book.setText(book);
 			}
 			
 			{
@@ -155,15 +188,15 @@ public class FragmentSpellInfo extends android.support.v4.app.Fragment
 			}
 			
 			{
-				String descriptor = Utils.CursorGetString(cursor, "descriptor");
+				String descriptor = Utils.CursorGetString(cursor, "descriptors");
 				this.row_descriptor.setVisibility(descriptor != null ? View.VISIBLE : View.GONE);
-				this.textview_descriptor.setText(descriptor);
+				this.textview_descriptors.setText(descriptor);
 			}
 			
 			{
-				String compenents = Utils.CursorGetString(cursor, "components");
-				this.row_components.setVisibility(compenents != null ? View.VISIBLE : View.GONE);
-				this.textview_components.setText(compenents);
+				String components = Utils.CursorGetString(cursor, "components");
+				this.row_components.setVisibility(components != null ? View.VISIBLE : View.GONE);
+				this.textview_components.setText(components);
 			}
 			
 			{
@@ -177,12 +210,6 @@ public class FragmentSpellInfo extends android.support.v4.app.Fragment
 				this.row_range.setVisibility(range != null ? View.VISIBLE : View.GONE);
 				this.textview_range.setText(range);
 			}
-
-//				{
-//					String eff_type = cursor.getString(cursor.getColumnIndex(Spell.COLUMN_EFFECT_TYPE));
-//					this.row_effect_type.setVisibility(eff_type != null ? View.VISIBLE : View.GONE);
-//					this.textview_effect_type.setText(eff_type);
-//				}
 			
 			{
 				String eff_type = Utils.CursorGetString(cursor, "effect_type");
@@ -212,8 +239,8 @@ public class FragmentSpellInfo extends android.support.v4.app.Fragment
 			
 			{
 				String desc = Utils.CursorGetString(cursor, "fluff");
-				this.textview_desc_m.setVisibility(desc != null ? View.VISIBLE : View.GONE);
-				this.textview_desc_m.setText(Html.fromHtml(desc != null ? desc : ""));
+				this.textview_flavor.setVisibility(desc != null ? View.VISIBLE : View.GONE);
+				this.textview_flavor.setText(Html.fromHtml(desc != null ? desc : ""));
 			}
 			
 			{
@@ -224,35 +251,27 @@ public class FragmentSpellInfo extends android.support.v4.app.Fragment
 				}
 				else
 				{
-					desc = desc.replace("\n", "<br/>");
-					desc = String.format("<html><head></head><body>%s</body></html>", desc);
+//					desc = desc.replace("\n", "<br/>");
+//					desc = String.format("<html><head></head><body>%s</body></html>", desc);
 				}
 				
 				this.webview_desc.loadDataWithBaseURL("spellbook://0.0.0.0/", desc, null, "UTF-8", null);
-			}
-			
-			{
-				String notes = Utils.CursorGetString(cursor, "notes");
-				this.edittext_notes.setText(notes);
-				this.notes = this.edittext_notes.getText().toString();
 			}
 			
 			cursor.close();
 		}
 		else // spell_name == null
 		{
-			this.root.setVisibility(View.GONE);
-			
 			this.spell_name = null;
-			this.notes = null;
 			
 			ActionBar action_bar = this.getActivity().getActionBar();
 			if(action_bar != null)
 				action_bar.setTitle("ERROR");
 			
+			this.textview_book.setText("");
 			this.textview_source.setText("");
 			this.textview_school.setText("");
-			this.textview_descriptor.setText("");
+			this.textview_descriptors.setText("");
 			this.textview_components.setText("");
 			this.textview_cast_time.setText("");
 			this.textview_range.setText("");
@@ -261,10 +280,8 @@ public class FragmentSpellInfo extends android.support.v4.app.Fragment
 			this.textview_duration.setText("");
 			this.textview_save.setText("");
 			this.textview_resistance.setText("");
-			this.textview_desc_m.setText("");
-//			this.textview_desc_l.setText("");
+			this.textview_flavor.setText("");
 			this.webview_desc.loadData("", "text/html; charset=utf-8", "utf-8");
-			this.edittext_notes.setText("");
 			
 			Toast.makeText(this.getContext(), "ERROR: spell is NULL", Toast.LENGTH_SHORT).show();
 		}

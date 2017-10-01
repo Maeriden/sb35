@@ -283,8 +283,9 @@ public class AdapterExpandableList implements android.widget.ExpandableListAdapt
 	@Override
 	public long getGroupId(int groupPosition)
 	{
-		if(this.groups_cursor != null)
-			this.groups_cursor.moveToPosition(groupPosition);
+		if(this.groups_cursor == null)
+			return 0;
+		this.groups_cursor.moveToPosition(groupPosition);
 		return this.supplier.getExpandableListGroupId(this.groups_cursor, groupPosition);
 	}
 	
@@ -303,8 +304,7 @@ public class AdapterExpandableList implements android.widget.ExpandableListAdapt
 	public long getChildId(int groupPosition, int childPosition)
 	{
 		Cursor child_cursor = this.children_cursors.get(groupPosition);
-		if(child_cursor != null)
-			child_cursor.moveToPosition(childPosition);
+		child_cursor.moveToPosition(childPosition);
 		return this.supplier.getExpandableListChildId(child_cursor, groupPosition, childPosition);
 	}
 	

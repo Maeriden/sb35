@@ -4,12 +4,16 @@
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
     <string name="settings">Settings</string>
     <string name="character">Character</string>
     <string name="spell_browser">Spell browser</string>
     <string name="choose_character_name">Choose name</string>
-    <string name="ok">OK</string>
-    <string name="cancel">Cancel</string>
+    <string name="learn_spell">Learn spell</string>
+    <string name="domains">Domains</string>
+    <string name="classes">Classes</string>
+    <string name="feats">Feats</string>
 
 
     <!-- FragmentCharacter -->
@@ -26,8 +30,9 @@
     <!-- FragmentSpellInfo -->
     <string name="spell_name">Name</string>
     <string name="spell_source">Source book</string>
+    <string name="levels">Levels</string>
     <string name="spell_school">School</string>
-    <string name="spell_descriptor">Descriptor</string>
+    <string name="spell_descriptors">Descriptors</string>
     <string name="spell_components">Components</string>
     <string name="spell_cast_time">Cast time</string>
     <string name="spell_range">Range</string>
@@ -59,4 +64,8 @@
     <string name="decrement">-</string>
     <string name="increment">+</string>
     <string name="recover_all">Recover all</string>
+    <string name="delete_character">Delete character</string>
+    <string name="rename_character">Rename character</string>
+    <string name="domain_slot">Domain slot</string>
+    <string name="done">Done</string>
 </resources>
