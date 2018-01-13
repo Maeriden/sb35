@@ -4,23 +4,23 @@ import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.util.AttributeSet;
-import android.view.View;
-import android.widget.CheckBox;
+import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import it.meridian.spellbook35.R;
 
-public class ViewSpellLearnable extends RelativeLayout
+
+public class ViewSlotAssign extends RelativeLayout
 {
 	private TextView text_view_spell_name;
 	private TextView text_view_spell_desc;
-	private CheckBox checkbox;
+	private ImageButton button;
 	private int groupPosition = -1;
 	private int childPosition = -1;
 	
 	
-	public ViewSpellLearnable(Context context)
+	public ViewSlotAssign(Context context)
 	{
 		super(context);
 		this.init(context, null);
@@ -28,21 +28,22 @@ public class ViewSpellLearnable extends RelativeLayout
 	
 	private void init(Context context, AttributeSet attributeSet)
 	{
-		this.checkbox = new CheckBox(context);
+		this.button = new ImageButton(context);
 		{
-			this.checkbox.setId(R.id.button_1);
+			this.button.setId(R.id.button_1);
 			
 			final int PADDING = 4;
-			this.checkbox.setPadding(PADDING, PADDING, PADDING, PADDING);
-			this.checkbox.setBackgroundColor(Color.TRANSPARENT);
-//			this.checkbox.setBackgroundResource(R.drawable.button_frame);
-			this.checkbox.setFocusable(false);
+			this.button.setPadding(PADDING, PADDING, PADDING, PADDING);
+			this.button.setBackgroundColor(Color.TRANSPARENT);
+			this.button.setImageResource(android.R.drawable.ic_input_add);
+			this.button.setBackgroundResource(R.drawable.button_frame);
+			this.button.setFocusable(false);
 			
-			this.addView(this.checkbox);
-			RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) this.checkbox.getLayoutParams();
+			this.addView(this.button);
+			RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) this.button.getLayoutParams();
 			layoutParams.addRule(RelativeLayout.ALIGN_PARENT_END);
 			layoutParams.addRule(RelativeLayout.CENTER_VERTICAL);
-			this.checkbox.setLayoutParams(layoutParams);
+			this.button.setLayoutParams(layoutParams);
 		}
 		
 		this.text_view_spell_name = new TextView(context);
@@ -87,27 +88,15 @@ public class ViewSpellLearnable extends RelativeLayout
 		this.text_view_spell_desc.setText(text);
 	}
 	
-	public void setCheckboxState(boolean isChecked)
+	public void setButtonOnClickListener(IButtonClickListener listener)
 	{
-		this.checkbox.setChecked(isChecked);
-	}
-	
-	public void setCheckable(boolean isCheckable)
-	{
-		this.checkbox.setVisibility(isCheckable ? View.VISIBLE : View.GONE);
-	}
-	
-	public void setCheckboxStateChangeListener(ICheckboxStateChangeListener listener)
-	{
-		CheckBox.OnCheckedChangeListener wrapper =
-				(checkbox, isChecked) -> listener.onCheckboxStateChanged(this, this.groupPosition, this.childPosition, isChecked);
-		this.checkbox.setOnCheckedChangeListener(wrapper);
+		this.button.setOnClickListener(button -> listener.onButtonClick(this, this.groupPosition, this.childPosition));
 	}
 	
 	
 	
-	public interface ICheckboxStateChangeListener
+	public interface IButtonClickListener
 	{
-		void onCheckboxStateChanged(ViewSpellLearnable view, int groupPosition, int childPosition, boolean isChecked);
+		void onButtonClick(ViewSlotAssign view, int groupPosition, int childPosition);
 	}
 }

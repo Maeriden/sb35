@@ -10,13 +10,9 @@
     <string name="character">Character</string>
     <string name="spell_browser">Spell browser</string>
     <string name="choose_character_name">Choose name</string>
-    <string name="learn_spell">Learn spell</string>
     <string name="domains">Domains</string>
     <string name="classes">Classes</string>
     <string name="feats">Feats</string>
-
-
-    <!-- FragmentCharacter -->
     <string name="level_N">Level %1$d</string>
     <string name="page_spell_slots">Spell slots</string>
     <string name="page_spell_known">Known spells</string>
@@ -24,10 +20,6 @@
     <string name="recover_slot">Recover slot</string>
     <string name="clear_slot">Clear slot</string>
     <string name="delete_slot">Delete slot</string>
-    <string name="unlearn_spell">Unlearn spell</string>
-
-
-    <!-- FragmentSpellInfo -->
     <string name="spell_name">Name</string>
     <string name="spell_source">Source book</string>
     <string name="levels">Levels</string>
@@ -42,9 +34,6 @@
     <string name="spell_saving_throw">Saving throw</string>
     <string name="spell_resistance">Resistance</string>
     <string name="spell_notes_label">NOTES</string>
-
-
-    <!-- DialogChooseLevel -->
     <string name="level_0">Level 0</string>
     <string name="level_1">Level 1</string>
     <string name="level_2">Level 2</string>
@@ -55,18 +44,24 @@
     <string name="level_7">Level 7</string>
     <string name="level_8">Level 8</string>
     <string name="level_9">Level 9</string>
-
-
-    <!-- Menus & dialogs-->
     <string name="add_slots">Add slots</string>
-    <string name="create_character">Create character</string>
+    <string name="add_character">Add character</string>
     <string name="choose_levels">Choose levels</string>
     <string name="decrement">-</string>
     <string name="increment">+</string>
     <string name="recover_all">Recover all</string>
     <string name="delete_character">Delete character</string>
     <string name="rename_character">Rename character</string>
+	<string name="expended">Expended</string>
     <string name="domain_slot">Domain slot</string>
     <string name="done">Done</string>
     <string name="import_database">Import database</string>
+    <string name="search_spell">Search spell</string>
+	<string name="assign_spell">Assign spell</string>
+    <string name="search">Search</string>
+    <string name="browse_spells">Browse spells</string>
+    <string name="search_spells">Search spells</string>
+	<string name="learn_spells">Learn spells</string>
+    <string name="unlearn_spells">Unlearn spells</string>
+	<string name="are_you_sure">Are you sure?</string>
 </resources>
