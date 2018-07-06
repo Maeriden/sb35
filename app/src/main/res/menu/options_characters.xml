@@ -8,11 +8,19 @@
         android:title="@string/add_character"
         />
     <item
+        android:id="@+id/menu_action_backup"
+        android:title="@string/backup_characters"/>
+    <item
         android:id="@+id/menu_action_import"
+        android:title="@string/backup_characters"/>
+    <item
+        android:id="@+id/menu_action_init"
         android:title="@string/import_database"/>
+    <!--
     <item
         android:id="@+id/menu_action_settings"
         android:orderInCategory="100"
         android:title="@string/settings"
         app:showAsAction="never"/>
+   -->
 </menu>

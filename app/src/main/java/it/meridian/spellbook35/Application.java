@@ -5,6 +5,7 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteCantOpenDatabaseException;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.widget.Toast;
 
 import java.io.File;
@@ -23,7 +24,6 @@ public class Application extends android.app.Application
 	
 	
 	private SQLiteDatabase database;
-	private String         current_character;
 	
 	
 	static public
@@ -89,12 +89,53 @@ public class Application extends android.app.Application
 	
 	static public
 	Cursor
-	query(String sql, String... selectionArgs)
+	query(SQLiteDatabase database, String sql, String... selectionArgs)
 	{
 		Cursor cursor = null;
-		if(instance.database != null)
-			cursor = instance.database.rawQuery(sql, selectionArgs);
+		if(database != null)
+			cursor = database.rawQuery(sql, selectionArgs);
 		return cursor;
+	}
+	
+	
+	static public
+	long
+	insert(SQLiteDatabase database, String table, ContentValues values)
+	{
+		long rowid = -1;
+		if(database != null)
+			rowid = database.insert(table, null, values);
+		return rowid;
+	}
+	
+	
+	static public
+	int
+	update(SQLiteDatabase database, String table, ContentValues values, String where, String... args)
+	{
+		int affected = 0;
+		if(database != null)
+			affected = database.update(table, values, where, args);
+		return affected;
+	}
+	
+	
+	static public
+	int
+	delete(SQLiteDatabase database, String table, String where, String... args)
+	{
+		int affected = 0;
+		if(database != null)
+			affected = database.delete(table, where, args);
+		return affected;
+	}
+	
+	
+	static public
+	Cursor
+	query(String sql, String... selectionArgs)
+	{
+		return Application.query(Application.instance.database, sql, selectionArgs);
 	}
 	
 	
@@ -102,10 +143,7 @@ public class Application extends android.app.Application
 	long
 	insert(String table, ContentValues values)
 	{
-		long rowid = -1;
-		if(instance.database != null)
-			rowid = instance.database.insert(table, null, values);
-		return rowid;
+		return Application.insert(Application.instance.database, table, values);
 	}
 	
 	
@@ -113,10 +151,7 @@ public class Application extends android.app.Application
 	int
 	update(String table, ContentValues values, String where, String... args)
 	{
-		int affected = 0;
-		if(instance.database != null)
-			affected = instance.database.update(table, values, where, args);
-		return affected;
+		return Application.update(Application.instance.database, table, values, where, args);
 	}
 	
 	
@@ -124,10 +159,7 @@ public class Application extends android.app.Application
 	int
 	delete(String table, String where, String... args)
 	{
-		int affected = 0;
-		if(instance.database != null)
-			affected = instance.database.delete(table, where, args);
-		return affected;
+		return Application.delete(Application.instance.database, table, where, args);
 	}
 	
 	
@@ -156,8 +188,15 @@ public class Application extends android.app.Application
 			{
 				ContentValues values = new ContentValues(1);
 				values.put("name", new_name);
-				final String WHERE = "name = ?";
-				int affected = Application.update("character", values, WHERE, old_name);
+				int affected = Application.update("character", values, "name = ?", old_name);
+				
+				if(affected > 0)
+				{
+					values = new ContentValues(1);
+					values.put("character", new_name);
+					Application.update("character_spell_slot",  values, "character = ?", old_name);
+					Application.update("character_spell_known", values, "character = ?", old_name);
+				}
 				return affected > 0;
 			}
 		}
@@ -171,8 +210,14 @@ public class Application extends android.app.Application
 	{
 		if(name != null && name.length() > 0)
 		{
-			final String WHERE = "name = ?";
-			long affected = Application.delete("character", WHERE, name);
+			long affected = Application.delete("character", "name = ?", name);
+			
+			if(affected > 0)
+			{
+				Application.delete("character_spell_slot",  "character = ?", name);
+				Application.delete("character_spell_known", "character = ?", name);
+			}
+			
 			return affected > 0;
 		}
 		return false;
@@ -181,71 +226,109 @@ public class Application extends android.app.Application
 	
 	static public
 	Character[]
-	backup_characters()
+	deserialize_characters()
 	{
+		return deserialize_characters(Application.instance.database);
+	}
+	
+	
+	static public
+	Character[]
+	deserialize_characters(SQLiteDatabase database)
+	{
+		if(database == null)
+			return null;
+		
 		Map<String, Character> characters = new HashMap<>();
 		
-		if(instance.database != null)
+		Cursor cursor = Application.query(database, "SELECT * FROM character");
+		if(cursor != null && cursor.getCount() > 0)
 		{
-			Cursor cursor = Application.query("SELECT * FROM character");
-			if(cursor != null && cursor.getCount() > 0)
+			for(int i = 0; i < cursor.getCount(); i++)
 			{
+				cursor.moveToNext();
+				int    id   = Utils.CursorGetInt(cursor, "id");
+				String name = Utils.CursorGetString(cursor, "name");
+				
+				Character character = new Character();
+				character.id   = id;
+				character.name = name;
+				characters.put(name, character);
+			}
+			cursor.close();
+			
+			
+			try
+			{
+				cursor = Application.query(database, "SELECT * FROM character_spell_slot");
 				for(int i = 0; i < cursor.getCount(); i++)
 				{
 					cursor.moveToNext();
-					int    id   = Utils.CursorGetInt(cursor, "id");
-					String name = Utils.CursorGetString(cursor, "name");
-					
-					Character character = new Character();
-					character.id   = id;
-					character.name = name;
-					characters.put(name, character);
-				}
-				cursor.close();
-				
-				
-				cursor = Application.query("SELECT * FROM character_spell_slot");
-				for(int i = 0; i < cursor.getCount(); i++)
-				{
-					cursor.moveToNext();
-					String  character = Utils.CursorGetString(cursor, "character");
-					int     id        = Utils.CursorGetInt(cursor, "id");
-					int     level     = Utils.CursorGetInt(cursor, "level");
-					String  spell     = Utils.CursorGetString(cursor, "spell");
-					boolean expended  = Utils.CursorGetInt(cursor, "expended")  != 0;
-					boolean is_domain = Utils.CursorGetInt(cursor, "is_domain") != 0;
 					
 					SpellSlot slot = new SpellSlot();
-					slot.id        = id;
-					slot.level     = level;
-					slot.spell     = spell;
-					slot.expended  = expended;
-					slot.is_domain = is_domain;
+					String character = Utils.CursorGetString(cursor, "character");
+					slot.id          = Utils.CursorGetInt(cursor,    "id");
+					slot.level       = Utils.CursorGetInt(cursor,    "level");
+					slot.spell       = Utils.CursorGetString(cursor, "spell");
+					slot.expended    = Utils.CursorGetInt(cursor,    "expended")  != 0;
+					slot.is_domain   = Utils.CursorGetInt(cursor,    "is_domain") != 0;
+					
 					characters.get(character).slots.add(slot);
 				}
 				cursor.close();
-				
-				
-				cursor = Application.query("SELECT * FROM character_spell_known");
+			}
+			catch(SQLiteException ignored)
+			{
+			
+			}
+			
+			
+			try
+			{
+				cursor = Application.query(database, "SELECT * FROM character_spell_known");
 				for(int i = 0; i < cursor.getCount(); i++)
 				{
 					cursor.moveToNext();
-					String character    = Utils.CursorGetString(cursor, "character");
-					String source       = Utils.CursorGetString(cursor, "source");
-					String spell        = Utils.CursorGetString(cursor, "spell");
-					int    level        = Utils.CursorGetInt(cursor, "level");
-					int    learn_remain = Utils.CursorGetInt(cursor, "learn_remain");
-					int    copy_remain  = Utils.CursorGetInt(cursor, "copy_remain");
 					
 					SpellKnown known = new SpellKnown();
-					known.source       = source;
-					known.spell        = spell;
-					known.level        = level;
-					known.learn_remain = learn_remain;
-					known.copy_remain  = copy_remain;
+					String character   = Utils.CursorGetString(cursor, "character");
+					known.source       = Utils.CursorGetString(cursor, "source");
+					known.spell        = Utils.CursorGetString(cursor, "spell");
+					known.level        = Utils.CursorGetInt(cursor,    "level");
+					known.learn_remain = Utils.CursorGetInt(cursor,    "study_remaining_time");
+					known.copy_remain  = Utils.CursorGetInt(cursor,    "copy_remaining_time");
+					
 					characters.get(character).known.add(known);
 				}
 				cursor.close();
+			}
+			catch(SQLiteException ignored)
+			{
+			
+			}
+			
+			
+			try
+			{
+				cursor = Application.query(database, "SELECT * FROM character_scroll");
+				for(int i = 0; i < cursor.getCount(); i++)
+				{
+					cursor.moveToNext();
+					
+					Scroll scroll = new Scroll();
+					String character = Utils.CursorGetString(cursor, "character");
+					scroll.id        = Utils.CursorGetInt(cursor,    "id");
+					scroll.type      = Utils.CursorGetInt(cursor,    "type");
+					scroll.level     = Utils.CursorGetInt(cursor,    "caster_level");
+					scroll.spell     = Utils.CursorGetString(cursor, "spell");
+					
+					characters.get(character).scrolls.add(scroll);
+				}
+				cursor.close();
+			}
+			catch(SQLiteException ignored)
+			{
+			
 			}
 		}
 
@@ -255,14 +338,23 @@ public class Application extends android.app.Application
 	
 	static public
 	void
-	restore_characters(Character[] characters)
+	serialize_characters(String database_name, Character[] characters)
 	{
+		if(characters == null || characters.length < 1)
+			return;
+		
+//		DateFormat df  = DateFormat.getDateTimeInstance();
+//		String     now = df.format(new Date());
+//
+		File           character_backup_file = new File(Application.instance.getExternalFilesDir("character_backups"), database_name);
+		SQLiteDatabase database              = SQLiteDatabase.openDatabase(character_backup_file.toString(), null, 0);
+		
 		for(Character character : characters)
 		{
 			ContentValues values_character = new ContentValues(2);
 			values_character.put("id",   character.id);
 			values_character.put("name", character.name);
-			long rowid = Application.insert("character", values_character);
+			long rowid = Application.insert(database, "character", values_character);
 			if(rowid != -1)
 			{
 				for(SpellSlot slot : character.slots)
@@ -274,7 +366,7 @@ public class Application extends android.app.Application
 					values.put("spell",     slot.spell);
 					values.put("expended",  slot.expended);
 					values.put("is_domain", slot.is_domain);
-					Application.insert("character_spell_slot", values);
+					Application.insert(database, "character_spell_slot", values);
 				}
 				
 				for(SpellKnown known : character.known)
@@ -286,7 +378,80 @@ public class Application extends android.app.Application
 					values.put("level",        known.level);
 					values.put("learn_remain", known.learn_remain);
 					values.put("copy_remain",  known.copy_remain);
-					Application.insert("character_spell_known", values);
+					Application.insert(database, "character_spell_known", values);
+				}
+				
+				for(Scroll scroll : character.scrolls)
+				{
+					ContentValues values = new ContentValues(5);
+					values.put("character",    character.name);
+					values.put("id",           scroll.id);
+					values.put("type",         scroll.type);
+					values.put("caster_level", scroll.level);
+					values.put("spell",        scroll.spell);
+					Application.insert(database, "character_scroll", values);
+				}
+			}
+		}
+	}
+	
+	
+	static public
+	void
+	import_characters(Character[] characters)
+	{
+		Application.import_characters(Application.instance.database, characters);
+	}
+	
+	
+	static public
+	void
+	import_characters(SQLiteDatabase database, Character[] characters)
+	{
+		if(database == null)
+			return;
+		
+		for(Character character : characters)
+		{
+			ContentValues values_character = new ContentValues(2);
+			values_character.put("id",   character.id);
+			values_character.put("name", character.name);
+			long rowid = Application.insert(database, "character", values_character);
+			if(rowid != -1)
+			{
+				for(SpellSlot slot : character.slots)
+				{
+					ContentValues values = new ContentValues(6);
+					values.put("character", character.name);
+					values.put("id",        slot.id);
+					values.put("level",     slot.level);
+					values.put("spell",     slot.spell);
+					values.put("expended",  slot.expended);
+					values.put("is_domain", slot.is_domain);
+					Application.insert(database, "character_spell_slot", values);
+				}
+				
+				for(SpellKnown known : character.known)
+				{
+					ContentValues values = new ContentValues(6);
+					values.put("character",    character.name);
+					values.put("source",       known.source);
+					values.put("spell",        known.spell);
+					values.put("level",        known.level);
+					values.put("learn_remain", known.learn_remain);
+					values.put("copy_remain",  known.copy_remain);
+					Application.insert(database, "character_spell_known", values);
+				}
+				
+				for(Scroll scroll : character.scrolls)
+				{
+					ContentValues values = new ContentValues(5);
+					values.put("character",    character.name);
+					values.put("id",           scroll.id);
+					values.put("type",         scroll.type);
+					values.put("caster_level", scroll.level);
+					values.put("spell",        scroll.spell);
+					Application.insert(database, "character_scroll", values);
 				}
 			}
 		}
@@ -300,27 +465,37 @@ public class Application extends android.app.Application
 		int    id;
 		String name;
 		
-		List<SpellSlot>  slots = new ArrayList<>();
-		List<SpellKnown> known = new ArrayList<>();
+		List<SpellSlot>  slots   = new ArrayList<>();
+		List<SpellKnown> known   = new ArrayList<>();
+		List<Scroll>     scrolls = new ArrayList<>();
 	}
 	
 	
-	public static class SpellSlot
+	static class SpellSlot
 	{
-		int       id;
-		int       level;
-		String    spell;
-		boolean   expended;
-		boolean   is_domain;
+		int     id;
+		int     level;
+		String  spell;
+		boolean expended;
+		boolean is_domain;
 	}
 	
 	
-	public static class SpellKnown
+	static class SpellKnown
 	{
-		String    source;
-		String    spell;
-		int       level;
-		int       learn_remain;
-		int       copy_remain;
+		String source;
+		String spell;
+		int    level;
+		int    learn_remain;
+		int    copy_remain;
+	}
+	
+	
+	static class Scroll
+	{
+		int    id;
+		int    type;
+		int    level;
+		String spell;
 	}
 }

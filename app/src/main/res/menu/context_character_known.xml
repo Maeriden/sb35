@@ -4,5 +4,11 @@
     <item
         android:id="@+id/menu_action_delete"
         android:title="@string/unlearn_spells"/>
+    <item
+        android:id="@+id/menu_action_study_spell"
+        android:title="@string/set_study_time"/>
+    <item
+        android:id="@+id/menu_action_copy_spell"
+        android:title="@string/set_copy_time"/>
 
 </menu>

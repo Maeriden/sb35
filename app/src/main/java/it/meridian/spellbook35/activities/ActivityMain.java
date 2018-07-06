@@ -1,11 +1,13 @@
 package it.meridian.spellbook35.activities;
 
+import android.app.SearchManager;
+import android.app.SearchableInfo;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
-import android.support.v4.app.Fragment;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -13,75 +15,77 @@ import android.support.v7.widget.Toolbar;
 import android.util.SparseArray;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.SearchView;
 import android.widget.Toast;
-
-import com.ncapdevi.fragnav.FragNavController;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.text.DateFormat;
+import java.util.Date;
 import java.util.Objects;
+import java.util.Stack;
 
 import it.meridian.spellbook35.Application;
+import it.meridian.spellbook35.Fragment;
 import it.meridian.spellbook35.R;
-import it.meridian.spellbook35.fragments.FragmentCharacters;
-import it.meridian.spellbook35.fragments.FragmentSpellInfo;
-import it.meridian.spellbook35.fragments.FragmentSpellSources;
+import it.meridian.spellbook35.hierarchy.characters.FragmentCharacters;
+import it.meridian.spellbook35.hierarchy.FragmentSpellInfo;
 
 import static it.meridian.spellbook35.utils.Utils.*;
 
 
-public class ActivityMain extends android.support.v7.app.AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener
+public class ActivityMain extends android.support.v7.app.AppCompatActivity
 {
 	static public final int REQUEST_CODE_OPEN_FILE = 1;
 	
 	
-	public FragNavController  fragnav_controller;
+//	public FragNavController  fragnav_controller;
+	private Stack<Fragment> fragment_stack = new Stack<>();
 	
 	
-	@Override
-	protected
+	protected @Override
 	void
 	onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
-		this.setContentView(R.layout.activity_main_drawer);
+//		this.setContentView(R.layout.activity_main_drawer);
+		this.setContentView(R.layout.activity_main);
 		Toolbar toolbar = findViewById(R.id.toolbar);
 		this.setSupportActionBar(toolbar);
 		
-		
 		DrawerLayout drawer = findViewById(R.id.drawer_layout);
-		ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-		drawer.addDrawerListener(toggle);
-		toggle.syncState();
-		
+		if(drawer != null)
+		{
+			ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+			drawer.addDrawerListener(toggle);
+			toggle.syncState();
+		}
 		
 		NavigationView navigationView = findViewById(R.id.nav_view);
-		navigationView.setNavigationItemSelectedListener(this);
+		if(navigationView != null)
+		{
+			navigationView.setNavigationItemSelectedListener(this::onNavigationDrawerItemSelected);
+		}
 		
-		String browser_title = this.getString(R.string.browse_spells);
-		List<Fragment> roots = Arrays.asList(FragmentCharacters.newInstance(),
-		                                     FragmentSpellSources.newInstance(browser_title, null, null, -1));
-		this.fragnav_controller = FragNavController.newBuilder(savedInstanceState,
-		                                                       this.getSupportFragmentManager(),
-		                                                       R.id.activity_main_content)
-		                                           .rootFragments(roots)
-		                                           .build();
-//		this.getSupportFragmentManager()
-//		    .beginTransaction()
-//		    .replace(R.id.activity_main_content, this.frag_character_list)
-//		    .commit();
+//		this.fragnav_controller = FragNavController.newBuilder(savedInstanceState,
+//		                                                       this.getSupportFragmentManager(),
+//		                                                       R.id.activity_main_content)
+//		                                           .rootFragmentListener(this::getNavigationRootFragments, 2)
+//		                                           .build();
+		Fragment root = FragmentCharacters.newInstance();
+		this.getSupportFragmentManager()
+	        .beginTransaction()
+	        .addToBackStack(null)
+	        .add(R.id.activity_main_content, root)
+	        .commit();
+		this.fragment_stack.push(root);
 	}
 	
 	
-	@Override
-	protected
+	protected @Override
 	void
 	onNewIntent(Intent intent)
 	{
@@ -105,30 +109,27 @@ public class ActivityMain extends android.support.v7.app.AppCompatActivity imple
 	}
 	
 	
-	@Override
-	protected
-	void
-	onStart()
-	{
-		super.onStart();
-	}
-	
-	
-	@Override
-	public
+	public @Override
 	void
 	onBackPressed()
 	{
 		DrawerLayout drawer = findViewById(R.id.drawer_layout);
-		if(drawer.isDrawerOpen(GravityCompat.START))
+		if(drawer != null && drawer.isDrawerOpen(GravityCompat.START))
 		{
 			drawer.closeDrawer(GravityCompat.START);
 		}
-		else
-		if(this.fragnav_controller.getCurrentStack().size() > 1)
+		else if(this.get_stack_size() > 1)
 		{
 			this.pop_fragment();
 		}
+//		else if(this.fragnav_controller.getCurrentStack().size() > 1)
+//		{
+//			this.pop_fragment();
+//		}
+//		else if(this.fragnav_controller.getCurrentStackIndex() != 0)
+//		{
+//			this.fragnav_controller.switchTab(0);
+//		}
 		else
 		{
 			super.onBackPressed();
@@ -136,34 +137,55 @@ public class ActivityMain extends android.support.v7.app.AppCompatActivity imple
 	}
 	
 	
-	@Override
-	public
+	public @Override
 	boolean
 	onCreateOptionsMenu(Menu menu)
 	{
-		// Inflate the menu; this adds items to the action bar if it is present.
-//		this.getMenuInflater().inflate(R.menu.options_activity_main, menu);
+		this.getMenuInflater().inflate(R.menu.options_activity_main, menu);
+		
+		// Get the SearchView and set the searchable configuration
+		SearchView     searchView     = (SearchView) menu.findItem(R.id.menu_action_search).getActionView();
+		SearchManager  searchManager  = (SearchManager) this.getSystemService(Context.SEARCH_SERVICE);
+		SearchableInfo searchableInfo = searchManager.getSearchableInfo(this.getComponentName());
+		// Assumes current activity is the searchable activity
+		searchView.setSearchableInfo(searchableInfo);
+		searchView.setIconifiedByDefault(true);
+		searchView.setSubmitButtonEnabled(true);
 		return true;
 	}
 	
 	
-	@Override
-	public
+	public @Override
 	boolean
 	onOptionsItemSelected(MenuItem item)
 	{
 		// Handle action bar item clicks here. The action bar will
 		// automatically handle clicks on the Home/Up button, so long
-		// as you specify a parent drawer_activity_main in AndroidManifest.xml.
+		// as you specify a parent drawer_activity_main in AndroidManifest.xml
 		switch(item.getItemId())
 		{
-			case R.id.menu_action_settings:
+			case R.id.menu_action_search:
 			{
-				Toast.makeText(this, "Not implemented", Toast.LENGTH_SHORT).show();
-				return true;
-			}
+				// This will execute only if there is not enough space to
+				// show the SearchView inside the Action Bar
+				this.onSearchRequested();
+			} break;
 			
-			case R.id.menu_action_import:
+			case R.id.menu_action_backup:
+			{
+				Application.Character[] characters = Application.deserialize_characters();
+				if(characters == null)
+				{
+					Toast.makeText(this, "No database to backup", Toast.LENGTH_SHORT).show();
+					break;
+				}
+
+				DateFormat df  = DateFormat.getDateTimeInstance();
+				String     now = df.format(new Date());
+				Application.serialize_characters(now, characters);
+			} break;
+			
+			case R.id.menu_action_init:
 			{
 				Intent intent = new Intent();
 				intent.setType("*/*");
@@ -172,31 +194,33 @@ public class ActivityMain extends android.support.v7.app.AppCompatActivity imple
 				
 				Intent chooser = Intent.createChooser(intent, "Select a file");
 				this.startActivityForResult(chooser, REQUEST_CODE_OPEN_FILE);
+			} break;
+			
+			default:
+			{
+				return super.onOptionsItemSelected(item);
 			}
-			break;
 		}
 		
-		return super.onOptionsItemSelected(item);
+		return true;
 	}
 	
 	
-	@Override
-	public
+	private
 	boolean
-	onNavigationItemSelected(@NonNull MenuItem item)
+	onNavigationDrawerItemSelected(@NonNull MenuItem item)
 	{
-		// Handle navigation view item clicks here.
 		int id = item.getItemId();
 		switch(id)
 		{
 			case R.id.nav_character:
 			{
-				this.fragnav_controller.switchTab(0);
+//				this.fragnav_controller.switchTab(0);
 			} break;
 			
 			case R.id.nav_browser:
 			{
-				this.fragnav_controller.switchTab(1);
+//				this.fragnav_controller.switchTab(1);
 			} break;
 		}
 		
@@ -234,7 +258,7 @@ public class ActivityMain extends android.support.v7.app.AppCompatActivity imple
 		int error;
 		try(InputStream reader = this.getContentResolver().openInputStream(database_uri))
 		{
-			Application.Character[] characters = Application.backup_characters();
+			Application.Character[] characters = Application.deserialize_characters();
 			
 			File output = app.getDatabasePath();
 			try(OutputStream writer = new FileOutputStream(output, false))
@@ -245,18 +269,8 @@ public class ActivityMain extends android.support.v7.app.AppCompatActivity imple
 					if(app.reloadDatabase())
 					{
 						if(characters != null && characters.length > 0)
-							Application.restore_characters(characters);
-						
-						// TODO: Test stack reset
-						String browser_title = this.getString(R.string.browse_spells);
-						List<Fragment> roots = Arrays.asList(FragmentCharacters.newInstance(),
-						                                     FragmentSpellSources.newInstance(browser_title, null, null, -1));
-						this.fragnav_controller.clearStack();
-						this.fragnav_controller = FragNavController.newBuilder(null,
-						                                                       this.getSupportFragmentManager(),
-						                                                       R.id.activity_main_content)
-						                                           .rootFragments(roots)
-						                                           .build();
+							Application.import_characters(characters);
+						this.get_current_fragment().refresh();
 					}
 				}
 			}
@@ -278,10 +292,36 @@ public class ActivityMain extends android.support.v7.app.AppCompatActivity imple
 	
 	
 	public
+	int
+	get_stack_size()
+	{
+//		return this.fragnav_controller.getCurrentStack().size();
+		return this.fragment_stack.size();
+	}
+	
+	
+	public
+	Fragment
+	get_current_fragment()
+	{
+//		return (Fragment)this.fragnav_controller.getCurrentFrag();
+		if(this.fragment_stack.size() > 0)
+			return this.fragment_stack.peek();
+		return null;
+	}
+	
+	
+	public
 	void
 	push_fragment(Fragment fragment)
 	{
-		this.fragnav_controller.pushFragment(fragment);
+//		this.fragnav_controller.pushFragment(fragment);
+		this.getSupportFragmentManager()
+		    .beginTransaction()
+	        .addToBackStack(null)
+	        .replace(R.id.activity_main_content, fragment)
+	        .commit();
+		this.fragment_stack.push(fragment);
 	}
 	
 	
@@ -289,25 +329,56 @@ public class ActivityMain extends android.support.v7.app.AppCompatActivity imple
 	void
 	pop_fragment()
 	{
-		this.pop_fragment(1);
+//		this.pop_fragment(1);
+		if(this.get_stack_size() > 0)
+		{
+			this.getSupportFragmentManager()
+		        .popBackStack();
+			this.fragment_stack.pop();
+		}
 	}
 	
 	
-	public
-	void
-	pop_fragment(int count)
-	{
-		this.fragnav_controller.popFragments(count);
-	}
+//	public
+//	void
+//	pop_fragment(int count)
+//	{
+//		this.fragnav_controller.popFragments(count);
+//	}
 	
 	
-	@Override
-	protected
-	void
-	onSaveInstanceState(Bundle outState)
-	{
-		super.onSaveInstanceState(outState);
-		if(this.fragnav_controller != null)
-			this.fragnav_controller.onSaveInstanceState(outState);
-	}
+//	protected @Override
+//	void
+//	onSaveInstanceState(Bundle outState)
+//	{
+//		super.onSaveInstanceState(outState);
+//		if(this.fragnav_controller != null)
+//			this.fragnav_controller.onSaveInstanceState(outState);
+//	}
+	
+	
+//	private
+//	android.support.v4.app.Fragment
+//	getNavigationRootFragments(int index)
+//	{
+//		if(index == 0)
+//		{
+//			return FragmentCharacters.newInstance();
+//		}
+//		if(index == 1)
+//		{
+//			return FragmentBrowser.newInstance();
+//		}
+//		return null;
+//	}
+	
+	
+	
+	
+//	@Override
+//	protected void onRestoreInstanceState(Bundle savedInstanceState)
+//	{
+//		super.onRestoreInstanceState(savedInstanceState);
+//		Toast.makeText(this, "onRestoreInstanceState(Bundle)", Toast.LENGTH_SHORT).show();
+//	}
 }

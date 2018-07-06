@@ -14,8 +14,11 @@
     <string name="classes">Classes</string>
     <string name="feats">Feats</string>
     <string name="level_N">Level %1$d</string>
-    <string name="page_spell_slots">Spell slots</string>
-    <string name="page_spell_known">Known spells</string>
+    <string name="scrolls">Scrolls</string>
+    <string name="slots">Slots</string>
+    <string name="known">Known</string>
+    <string name="spell_slots">Spell slots</string>
+    <string name="known_spells">Known spells</string>
     <string name="expend_slot">Expend slot</string>
     <string name="recover_slot">Recover slot</string>
     <string name="clear_slot">Clear slot</string>
@@ -64,4 +67,12 @@
 	<string name="learn_spells">Learn spells</string>
     <string name="unlearn_spells">Unlearn spells</string>
 	<string name="are_you_sure">Are you sure?</string>
+	<string name="set_study_time">Set study time</string>
+    <string name="set_copy_time">Set copy time</string>
+	<string name="set_caster_level">Set caster level</string>
+    <string name="add_arcane_scrolls">Add arcane scrolls</string>
+    <string name="add_divine_scrolls">Add divine scrolls</string>
+    <string name="add_scroll">Add scroll</string>
+    <string name="delete_scroll">Delete scroll</string>
+	<string name="backup_characters">Backup characters</string>
 </resources>

@@ -1,32 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-            android:id="@+id/fragment_spell_info"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@drawable/spellbook_bg">
-
-    <RelativeLayout
+<android.support.v4.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+                                            xmlns:tools="http://schemas.android.com/tools"
+                                            android:id="@+id/fragment_spell_info"
+                                            android:layout_width="match_parent"
+                                            android:layout_height="match_parent"
+                                            android:padding="3dp">
+    
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_margin="3dp"
         android:orientation="vertical">
-
+    
         <TableLayout
             android:id="@+id/spell_info_header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="3dp"
             android:divider="@drawable/table_divider_horizontal"
-            android:padding="1dp"
             android:showDividers="beginning|middle|end">
-
+        
             <TableRow
                 android:id="@+id/row_spell_0"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:divider="@drawable/table_divider_vertical"
                 android:showDividers="beginning|middle|end">
-
+            
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -36,7 +34,7 @@
                     android:textAlignment="viewEnd"
                     android:textSize="12sp"
                     android:textStyle="normal|bold"/>
-
+            
                 <TextView
                     android:id="@+id/spell_book"
                     android:layout_width="wrap_content"
@@ -46,14 +44,14 @@
                     android:paddingStart="3dp"
                     android:textSize="12sp"/>
             </TableRow>
-
+        
             <TableRow
                 android:id="@+id/row_spell_B"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:divider="@drawable/table_divider_vertical"
                 android:showDividers="beginning|middle|end">
-
+            
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -63,7 +61,7 @@
                     android:textAlignment="viewEnd"
                     android:textSize="12sp"
                     android:textStyle="normal|bold"/>
-
+            
                 <TextView
                     android:id="@+id/spell_levels"
                     android:layout_width="wrap_content"
@@ -73,14 +71,14 @@
                     android:paddingStart="3dp"
                     android:textSize="12sp"/>
             </TableRow>
-
+        
             <TableRow
                 android:id="@+id/row_spell_1"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:divider="@drawable/table_divider_vertical"
                 android:showDividers="beginning|middle|end">
-
+            
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -90,7 +88,7 @@
                     android:textAlignment="viewEnd"
                     android:textSize="12sp"
                     android:textStyle="normal|bold"/>
-
+            
                 <TextView
                     android:id="@+id/spell_school"
                     android:layout_width="wrap_content"
@@ -100,14 +98,14 @@
                     android:paddingStart="3dp"
                     android:textSize="12sp"/>
             </TableRow>
-
+        
             <TableRow
                 android:id="@+id/row_spell_2"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:divider="@drawable/table_divider_vertical"
                 android:showDividers="beginning|middle|end">
-
+            
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -117,7 +115,7 @@
                     android:textAlignment="viewEnd"
                     android:textSize="12sp"
                     android:textStyle="normal|bold"/>
-
+            
                 <TextView
                     android:id="@+id/spell_descriptor"
                     android:layout_width="wrap_content"
@@ -127,14 +125,14 @@
                     android:paddingStart="3dp"
                     android:textSize="12sp"/>
             </TableRow>
-
+        
             <TableRow
                 android:id="@+id/row_spell_3"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:divider="@drawable/table_divider_vertical"
                 android:showDividers="beginning|middle|end">
-
+            
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -144,7 +142,7 @@
                     android:textAlignment="viewEnd"
                     android:textSize="12sp"
                     android:textStyle="normal|bold"/>
-
+            
                 <TextView
                     android:id="@+id/spell_components"
                     android:layout_width="wrap_content"
@@ -154,14 +152,14 @@
                     android:paddingStart="3dp"
                     android:textSize="12sp"/>
             </TableRow>
-
+        
             <TableRow
                 android:id="@+id/row_spell_4"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:divider="@drawable/table_divider_vertical"
                 android:showDividers="beginning|middle|end">
-
+            
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -171,7 +169,7 @@
                     android:textAlignment="viewEnd"
                     android:textSize="12sp"
                     android:textStyle="normal|bold"/>
-
+            
                 <TextView
                     android:id="@+id/spell_cast_time"
                     android:layout_width="wrap_content"
@@ -181,14 +179,14 @@
                     android:paddingStart="3dp"
                     android:textSize="12sp"/>
             </TableRow>
-
+        
             <TableRow
                 android:id="@+id/row_spell_5"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:divider="@drawable/table_divider_vertical"
                 android:showDividers="beginning|middle|end">
-
+            
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -198,7 +196,7 @@
                     android:textAlignment="viewEnd"
                     android:textSize="12sp"
                     android:textStyle="normal|bold"/>
-
+            
                 <TextView
                     android:id="@+id/spell_range"
                     android:layout_width="wrap_content"
@@ -208,14 +206,14 @@
                     android:paddingStart="3dp"
                     android:textSize="12sp"/>
             </TableRow>
-
+        
             <TableRow
                 android:id="@+id/row_spell_7"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:divider="@drawable/table_divider_vertical"
                 android:showDividers="beginning|middle|end">
-
+            
                 <TextView
                     android:id="@+id/spell_effect_type"
                     android:layout_width="wrap_content"
@@ -226,7 +224,7 @@
                     android:textAlignment="viewEnd"
                     android:textSize="12sp"
                     android:textStyle="normal|bold"/>
-
+            
                 <TextView
                     android:id="@+id/spell_effect"
                     android:layout_width="wrap_content"
@@ -236,14 +234,14 @@
                     android:paddingStart="3dp"
                     android:textSize="12sp"/>
             </TableRow>
-
+        
             <TableRow
                 android:id="@+id/row_spell_8"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:divider="@drawable/table_divider_vertical"
                 android:showDividers="beginning|middle|end">
-
+            
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -253,7 +251,7 @@
                     android:textAlignment="viewEnd"
                     android:textSize="12sp"
                     android:textStyle="normal|bold"/>
-
+            
                 <TextView
                     android:id="@+id/spell_duration"
                     android:layout_width="wrap_content"
@@ -263,14 +261,14 @@
                     android:paddingStart="3dp"
                     android:textSize="12sp"/>
             </TableRow>
-
+        
             <TableRow
                 android:id="@+id/row_spell_9"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:divider="@drawable/table_divider_vertical"
                 android:showDividers="beginning|middle|end">
-
+            
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -280,7 +278,7 @@
                     android:textAlignment="viewEnd"
                     android:textSize="12sp"
                     android:textStyle="normal|bold"/>
-
+            
                 <TextView
                     android:id="@+id/spell_saving_throw"
                     android:layout_width="wrap_content"
@@ -290,14 +288,14 @@
                     android:paddingStart="3dp"
                     android:textSize="12sp"/>
             </TableRow>
-
+        
             <TableRow
                 android:id="@+id/row_spell_A"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:divider="@drawable/table_divider_vertical"
                 android:showDividers="beginning|middle|end">
-
+            
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -307,7 +305,7 @@
                     android:textAlignment="viewEnd"
                     android:textSize="12sp"
                     android:textStyle="normal|bold"/>
-
+            
                 <TextView
                     android:id="@+id/spell_resistance"
                     android:layout_width="wrap_content"
@@ -318,23 +316,23 @@
                     android:textSize="12sp"/>
             </TableRow>
         </TableLayout>
-
+    
         <TextView
             android:id="@+id/spell_flavor"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@+id/spell_info_header"
-            android:layout_marginTop="5dp"
-            android:paddingBottom="3dp"
+            android:layout_marginTop="3dp"
+            android:textAlignment="center"
+            android:textSize="12sp"
             android:textStyle="normal|italic"/>
-
+    
         <WebView
             android:id="@+id/spell_desc"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@+id/spell_flavor"
-            android:background="@android:color/transparent"
-            android:backgroundTint="@android:color/transparent"/>
-
-    </RelativeLayout>
-</ScrollView>
+            android:layout_marginTop="5dp"
+            android:backgroundTint="@android:color/transparent"
+            tools:targetApi="lollipop"/>
+    
+    </LinearLayout>
+</android.support.v4.widget.NestedScrollView>

@@ -1,8 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <declare-styleable name="IntPicker">
+    <declare-styleable name="ViewIntPicker">
         <attr name="minValue" format="integer"/>
         <attr name="maxValue" format="integer"/>
-        <attr name="value" format="integer"/>
+        <attr name="value"    format="integer"/>
     </declare-styleable>
+	
+	<declare-styleable name="ViewSpellSlotChild">
+		<attr name="backgroundColorExpended" format="color"/>
+	</declare-styleable>
+	
+	<declare-styleable name="ViewSpellKnownChild">
+		<attr name="backgroundColorStudying" format="color"/>
+		<attr name="backgroundColorCopying"  format="color"/>
+	</declare-styleable>
 </resources>

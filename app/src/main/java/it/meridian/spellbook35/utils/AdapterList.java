@@ -13,37 +13,34 @@ import java.util.Set;
 
 import it.meridian.spellbook35.utils.callbacks.*;
 
-@SuppressWarnings("UnnecessaryLocalVariable")
+
 public class AdapterList implements android.widget.ListAdapter
 {
-	private IFunction1<Long, Cursor> getItemIdCallback;
+	private final Set<DataSetObserver>                observers;
+	private IFunction1<Long, Cursor>                  getItemIdCallback;
 	private IFunction3<View, Cursor, View, ViewGroup> getItemViewCallback;
-	private Cursor cursor;
-	private final Set<DataSetObserver> observers = new HashSet<>();
+	private Cursor                                    cursor;
 	
 	
-	public AdapterList(IFunction1<Long, Cursor> getItemIdCallback,
-	                   IFunction3<View, Cursor, View, ViewGroup> getItemViewCallback,
-	                   Cursor cursor)
+	public
+	AdapterList(IFunction1<Long, Cursor>                  getItemIdCallback,
+	            IFunction3<View, Cursor, View, ViewGroup> getItemViewCallback,
+	            Cursor                                    cursor)
 	{
-		this.getItemIdCallback = getItemIdCallback;
+		this.observers           = new HashSet<>();
+		this.getItemIdCallback   = getItemIdCallback;
 		this.getItemViewCallback = getItemViewCallback;
-		this.cursor = cursor;
+		this.cursor              = cursor;
 	}
 	
 	
-	public AdapterList(IFunction1<Long, Cursor> getItemIdCallback,
-	                   IFunction3<View, Cursor, View, ViewGroup> getItemViewCallback)
-	{
-		this(getItemIdCallback, getItemViewCallback, null);
-	}
-	
-
-	public void swapCursor(Cursor new_cursor)
+	public
+	void
+	swapCursor(Cursor new_cursor)
 	{
 		if(this.cursor == new_cursor)
 			return;
-
+		
 		if(this.cursor != null)
 		{
 			synchronized(this.observers)
@@ -53,9 +50,9 @@ public class AdapterList implements android.widget.ListAdapter
 			}
 			this.cursor.close();
 		}
-
+		
 		this.cursor = new_cursor;
-
+		
 		if(this.cursor != null)
 		{
 			synchronized(this.observers)
@@ -71,12 +68,14 @@ public class AdapterList implements android.widget.ListAdapter
 		}
 	}
 	
-
+	
 	/**
 	 * Notifies the attached observers that the underlying data has been changed
 	 * and any View reflecting the data set should refresh itself.
 	 */
-	private void notifyDataSetChanged()
+	private
+	void
+	notifyDataSetChanged()
 	{
 		synchronized(this.observers)
 		{
@@ -89,13 +88,15 @@ public class AdapterList implements android.widget.ListAdapter
 		}
 	}
 	
-
+	
 	/**
 	 * Notifies the attached observers that the underlying data is no longer valid
 	 * or available. Once invoked this adapter is no longer valid and should
 	 * not report further data set changes.
 	 */
-	private void notifyDataSetInvalidated()
+	private
+	void
+	notifyDataSetInvalidated()
 	{
 		synchronized(this.observers)
 		{
@@ -104,7 +105,7 @@ public class AdapterList implements android.widget.ListAdapter
 		}
 	}
 	
-
+	
 	/**
 	 * Indicates whether all the items in this adapter are enabled. If the
 	 * value returned by this method changes over time, there is no guarantee
@@ -115,12 +116,14 @@ public class AdapterList implements android.widget.ListAdapter
 	 * @see #isEnabled(int)
 	 */
 	@Override
-	public boolean areAllItemsEnabled()
+	public
+	boolean
+	areAllItemsEnabled()
 	{
 		return true;
 	}
 	
-
+	
 	/**
 	 * Returns true if the item at the specified position is not a separator.
 	 * (A separator is a non-selectable, non-clickable item).
@@ -133,19 +136,23 @@ public class AdapterList implements android.widget.ListAdapter
 	 * @see #areAllItemsEnabled()
 	 */
 	@Override
-	public boolean isEnabled(int position)
+	public
+	boolean
+	isEnabled(int position)
 	{
 		return true;
 	}
 	
-
+	
 	/**
 	 * Register an observer that is called when changes happen to the data used by this adapter.
 	 *
 	 * @param observer the object that gets notified when the data set changes.
 	 */
 	@Override
-	public void registerDataSetObserver(DataSetObserver observer)
+	public
+	void
+	registerDataSetObserver(DataSetObserver observer)
 	{
 		if(observer != null)
 		{
@@ -158,7 +165,7 @@ public class AdapterList implements android.widget.ListAdapter
 		}
 	}
 	
-
+	
 	/**
 	 * Unregister an observer that has previously been registered with this
 	 * adapter via {@link #registerDataSetObserver}.
@@ -166,7 +173,9 @@ public class AdapterList implements android.widget.ListAdapter
 	 * @param observer the object to unregister.
 	 */
 	@Override
-	public void unregisterDataSetObserver(DataSetObserver observer)
+	public
+	void
+	unregisterDataSetObserver(DataSetObserver observer)
 	{
 		if(observer != null)
 		{
@@ -179,14 +188,16 @@ public class AdapterList implements android.widget.ListAdapter
 		}
 	}
 	
-
+	
 	/**
 	 * How many items are in the data set represented by this Adapter.
 	 *
 	 * @return Count of items.
 	 */
 	@Override
-	public int getCount()
+	public
+	int
+	getCount()
 	{
 		int result = 0;
 		if(this.cursor != null)
@@ -194,7 +205,7 @@ public class AdapterList implements android.widget.ListAdapter
 		return result;
 	}
 	
-
+	
 	/**
 	 * Get the data item associated with the specified position in the data set.
 	 *
@@ -203,17 +214,19 @@ public class AdapterList implements android.widget.ListAdapter
 	 * @return The data at the specified position.
 	 */
 	@Override
-	public Object getItem(int position)
+	public
+	Object
+	getItem(int position)
 	{
 		if(this.cursor != null)
 		{
-			boolean success = this.cursor.moveToPosition(position);
+			this.cursor.moveToPosition(position);
 			return this.cursor;
 		}
 		return null;
 	}
 	
-
+	
 	/**
 	 * Get the row id associated with the specified position in the list.
 	 *
@@ -221,7 +234,9 @@ public class AdapterList implements android.widget.ListAdapter
 	 * @return The id of the item at the specified position.
 	 */
 	@Override
-	public long getItemId(int position)
+	public
+	long
+	getItemId(int position)
 	{
 		long result = 0;
 		if(this.cursor != null)
@@ -232,7 +247,7 @@ public class AdapterList implements android.widget.ListAdapter
 		return result;
 	}
 	
-
+	
 	/**
 	 * Indicates whether the item ids are stable across changes to the
 	 * underlying data.
@@ -240,12 +255,14 @@ public class AdapterList implements android.widget.ListAdapter
 	 * @return True if the same id always refers to the same object.
 	 */
 	@Override
-	public boolean hasStableIds()
+	public
+	boolean
+	hasStableIds()
 	{
 		return true;
 	}
 	
-
+	
 	/**
 	 * Get a View that displays the data at the specified position in the data set. You can either
 	 * create a View manually or inflate it from an XML layout file. When the View is inflated, the
@@ -265,7 +282,9 @@ public class AdapterList implements android.widget.ListAdapter
 	 * @return A View corresponding to the data at the specified position.
 	 */
 	@Override
-	public View getView(int position, View convertView, ViewGroup parent)
+	public
+	View
+	getView(int position, View convertView, ViewGroup parent)
 	{
 		View result = null;
 		if(this.cursor != null)
@@ -276,7 +295,7 @@ public class AdapterList implements android.widget.ListAdapter
 		return result;
 	}
 	
-
+	
 	/**
 	 * Get the type of View that will be created by {@link #getView} for the specified item.
 	 *
@@ -289,12 +308,14 @@ public class AdapterList implements android.widget.ListAdapter
 	 * @see #IGNORE_ITEM_VIEW_TYPE
 	 */
 	@Override
-	public int getItemViewType(int position)
+	public
+	int
+	getItemViewType(int position)
 	{
 		return 0;
 	}
 	
-
+	
 	/**
 	 * <p>
 	 * Returns the number of types of Views that will be created by
@@ -309,12 +330,14 @@ public class AdapterList implements android.widget.ListAdapter
 	 * @return The number of types of Views that will be created by this adapter
 	 */
 	@Override
-	public int getViewTypeCount()
+	public
+	int
+	getViewTypeCount()
 	{
 		return 1;
 	}
 	
-
+	
 	/**
 	 * @return true if this adapter doesn't contain any data.  This is used to determine
 	 * whether the empty view should be displayed.  A typical implementation will return
@@ -322,7 +345,9 @@ public class AdapterList implements android.widget.ListAdapter
 	 * adapters might want a different behavior.
 	 */
 	@Override
-	public boolean isEmpty()
+	public
+	boolean
+	isEmpty()
 	{
 		boolean empty = this.getCount() == 0;
 		return empty;
